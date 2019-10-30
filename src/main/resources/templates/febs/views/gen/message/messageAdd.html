@@ -1,0 +1,122 @@
+<style>
+    #message-add {
+        padding: 20px 25px 25px 0;
+    }
+    #message-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="message-add">
+    <form class="layui-form" action="" lay-filter="message-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">标题：</label>
+            <div class="layui-input-block">
+                <input type="text" name="title"  lay-verify="verssion"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">消息内容：</label>
+            <div class="layui-input-block">
+                <input type="text" name="content" lay-verify="content" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">发布时间：</label>
+            <div class="layui-input-block">
+                <input type="text" name="publishTime" id="publishTime" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否置顶：</label>
+             <div class="layui-input-block">
+             <select name="isTop" id="isTop" >
+						<option value="0">否</option>		
+						<option value="1">是</option>				
+					</select>
+            </div>
+        </div>
+ 
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否上架：</label>
+             <div class="layui-input-block">
+             <select name="isValid" id="isValid"  >
+						<option value="0">否</option>		
+						<option value="1">是</option>				
+					</select>
+            </div>
+        </div>
+ <div class="layui-form-item">
+            <label class="layui-form-label">市场：</label>
+            <div class="layui-input-block">
+               <select name="deptId" id="deptId" 
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="message-add-dept"
+                        xm-select-skin="default">										
+					</select>
+            </div>
+        </div>
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="message-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs', 'laydate', 'form', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            laydate = layui.laydate,
+            $view = $('#message-add'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        laydate.render({
+            elem: '#publishTime',
+            range: false,
+            type:'datetime', // 可选择：年、月、日、时、分、秒
+            format: 'yyyy-MM-dd HH:mm:ss', //指定时间格式
+            trigger: 'click'
+        });
+        formSelects.render();
+        formSelects.config('message-add-dept', {
+            searchUrl: ctx + 'dept/market/null',
+            response: {
+                statusCode: 200
+            },
+            beforeSuccess: function (id, url, searchVal, result) {
+                var data = result.data;
+                var tranData = [];
+                for (var i = 0; i < data.length; i++) {
+                    tranData.push({
+                        name: data[i].deptName,
+                        value: data[i].deptId
+                    })
+                }
+                result.data = tranData;
+                return result;
+            },
+            error: function (id, url, searchVal, err) {
+                console.error(err);
+                febs.alert.error('获取角色列表失败');
+            }
+        });
+        form.on('submit(message-add-form-submit)', function (data) {
+            febs.post(ctx + 'message', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增消息成功');
+                $('#febs-message').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

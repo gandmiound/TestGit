@@ -1,0 +1,209 @@
+<style>
+    #contract-update {
+        padding: 20px 25px 25px 0;
+    }
+
+    #contract-update .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="contract-update">
+    <form class="layui-form" action="" lay-filter="contract-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">合同id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${contract.id}">
+            </div>
+        </div>
+         <div class="layui-form-item">
+            <label class="layui-form-label">档口：</label>
+            <div class="layui-input-block">
+               <select name="deptId" id="deptId" 
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="contract-update-dept"
+                        xm-select-skin="default">										
+					</select>
+            </div>
+        </div>
+       <div class="layui-form-item">
+            <label class="layui-form-label">合同编号：</label>
+            <div class="layui-input-block">
+                <input type="text" name="contractno"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="begindate" id="begindate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">结束日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="enddate" id="enddate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">期限(年)：</label>
+            <div class="layui-input-block">
+                <input type="number" name="serrialno" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">经营项目：</label>
+            <div class="layui-input-block">
+                <input type="text" name="bussiitem"  autocomplete="off" class="layui-input">
+            </div>
+        </div>       
+        <div class="layui-form-item">
+            <label class="layui-form-label">月租：</label>
+            <div class="layui-input-block">
+                <input type="text" name="price" lay-verify="price" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">缴费时长(月)：</label>
+            <div class="layui-input-block">
+                <input type="number" name="type" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">上传合同：</label>
+            <div class="layui-input-block">
+                <input type="hidden" name="url" id="url" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" 
+                data-th-src="${contract.url}" class="layui-upload-img" id="demo1">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">档口图片：</label>
+            <div class="layui-input-block">
+                <input type="hidden" name="photo" id="photo" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" data-th-src="${contract.photo}" class="layui-upload-img" id="demo2">
+            </div>
+        </div>
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="contract-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'laydate', 'formSelects', 'validate', 'treeSelect', 'upload'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            contract = [[${contract}]],
+            $view = $('#contract-update'),
+            validate = layui.validate,
+            upload = layui.upload;
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+    
+        function initUserValue() {
+            form.val("contract-update-form", {            
+                "contractno": contract.contractno,
+                "begindate": contract.begindate,
+                "enddate": contract.enddate,
+                "serrialno": contract.serrialno,
+                "bussiitem": contract.bussiitem,
+                "price": contract.price,
+                "type": contract.type,
+                "url": contract.url,
+                "photo": contract.photo
+            });
+        }
+    
+        laydate.render({
+            elem: '#begindate',
+            range: false,
+            trigger: 'click'
+        });
+        laydate.render({
+            elem: '#enddate',
+            range: false,
+            trigger: 'click'
+        });
+    	//普通图片上传
+		var uploadInst = upload.render({
+					elem : '#demo1',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo1').attr('src', result); //图片链接（base64）
+							
+						});
+					},
+					done : function(res) {	
+						 form.val("contract-update-form", {				                
+				                "url": res.data
+				            });
+					}									
+				});
+		var uploadInst2 = upload.render({
+					elem : '#demo2',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo2').attr('src', result); //图片链接（base64）
+						});
+					},
+					done : function(res) {
+						 form.val("contract-update-form", {				                
+				                "photo": res.data
+				            });
+					}									
+				});
+		formSelects.config('contract-update-dept', {
+            searchUrl: ctx + 'dept/getChild2/'+contract.marketId,
+            response: {
+                statusCode: 200
+            },
+            beforeSuccess: function (id, url, searchVal, result) {
+                var data = result.data;
+                var tranData = [];
+                for (var i = 0; i < data.length; i++) {
+                    tranData.push({
+                        name: data[i].deptName,
+                        value: data[i].deptId
+                    })
+                }
+                result.data = tranData;
+                return result;
+            },
+            success: function () {
+                formSelects.value('contract-update-dept', contract.deptId.split(','));
+            },
+            error: function (id, url, searchVal, err) {
+                console.error(err);
+                febs.alert.error('获取角色列表失败');
+            }
+        });
+		
+        form.on('submit(contract-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, contract)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'contract/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('合同数据修改成功');
+                $('#febs-contract').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

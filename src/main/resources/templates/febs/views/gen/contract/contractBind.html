@@ -1,0 +1,86 @@
+<style>
+    #contract-bind {
+        padding: 20px 25px 25px 0;
+    }
+
+    #contract-bind .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="contract-bind">
+    <form class="layui-form" action="" lay-filter="contract-bind-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">合同id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${contractId}">
+            </div>
+        </div>        
+      <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">档口：</label>
+            <div class="layui-input-block">
+                <select name="deptId"
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="contract-add-dept"
+                        xm-select-skin="default">
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="contract-bind-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'laydate', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            marketId = [[${marketId}]],
+            $view = $('#contract-bind'),
+            validate = layui.validate;
+        form.verify(validate);
+        form.render();
+
+        formSelects.config('contract-add-dept', {
+            searchUrl: ctx + 'dept/child/'+marketId,
+            response: {
+                statusCode: 200
+            },
+            beforeSuccess: function (id, url, searchVal, result) {
+                var data = result.data;
+                var tranData = [];
+                for (var i = 0; i < data.length; i++) {
+                    tranData.push({
+                        name: data[i].deptName,
+                        value: data[i].deptId
+                    })
+                }
+                result.data = tranData;
+                return result;
+            },
+            error: function (id, url, searchVal, err) {
+                console.error(err);
+                febs.alert.error('获取角色列表失败');
+            }
+        });
+      
+        form.on('submit(contract-bind-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, contract)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'contract/bind', data.field, function () {
+                layer.closeAll();
+                febs.alert.success(contract.contractname + ' 商户数据修改成功');
+                $('#febs-contract').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

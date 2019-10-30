@@ -1,0 +1,188 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-version" lay-title="版本信息管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="version-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">版本名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="verssion" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                                                 
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="version:add,version:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="versionTable" lay-data="{id: 'versionTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="version-type">
+    {{#
+    var type = {
+    2: {title: '选择更新'},
+    1: {title: '强制更新'},
+    3: {title: '不需更新'}
+    }[d.type];
+    }}
+    <span>{{ type.title }}</span>
+</script>
+<script type="text/html" id="version-platform">
+    {{#
+    var platform = {
+    '02': {title: 'IOS'},
+    '01': {title: 'android'}
+    }[d.platform];
+    }}
+    <span>{{ platform.title }}</span>
+</script>
+<script type="text/html" id="version-option">
+    <span shiro:lacksPermission="version:update,version:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="version:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="version:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-version'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('versionTable');
+                if (name === 'add') {
+                    febs.modal.open('新增版本信息', 'gen/version/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#version-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#version-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的版本信息');
+                    } else {
+                        febs.modal.confirm('删除版本信息', '确定删除该版本信息？', function () {
+                            var versionIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                versionIds.push(item.id)
+                            });
+                            deleteUsers(versionIds.join(','));
+                        });
+                    }
+                }
+            
+            },
+            options: [{
+                name: 'add',
+                title: '新增版本信息',
+                perms: 'version:add'
+            }, {
+                name: 'delete',
+                title: '删除版本信息',
+                perms: 'version:delete'
+            }]
+        });
+
+        table.on('tool(versionTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除版本信息', '确定删除该版本信息？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改版本信息', 'gen/version/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#version-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'versionTable',
+                url: ctx + 'version/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'verssion', title: '版本名称', minWidth: 100},
+                    {title: '平台', templet: '#version-platform', minWidth: 100},
+                    {field: 'description',title: '描述',  minWidth: 100},
+                    {title: '是否强更', templet: '#version-type'},
+                    {field: 'issueTime', title: '创建时间'},                  
+                    {title: '操作', toolbar: '#version-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+           
+            return {             
+            	verssion: $searchForm.find('input[name="verssion"]').val().trim(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(versionIds) {
+            febs.get(ctx + 'version/delete/' + versionIds, null, function () {
+                febs.alert.success('删除版本信息成功');
+                $query.click();
+            });
+        }
+    })
+</script>

@@ -1,0 +1,56 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-read" lay-title="商户管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">     
+            <div class="layui-card">      
+                        
+                <div class="layui-card-body febs-table-full">  
+                <form class="layui-form layui-table-form" lay-filter="message-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <div class="layui-input-inline">
+                       <input type="hidden" name="msgId"  id="msgId"  autocomplete="off" class="layui-input"  data-th-value="${msgId}">
+                                        </div>
+                                    </div>
+                                                                 
+                                </div>
+                            </div>                           
+                        </div>
+                    </form>                
+                    <table lay-filter="readTable" lay-data="{id: 'readTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script data-th-inline="none" type="text/javascript">
+    layui.use([ 'jquery',  'form', 'table', 'febs'], function () {
+        var $ = layui.jquery,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            $view = $('#febs-read'),
+            $searchForm = $view.find('form'),
+            tableIns;
+		 
+         form.render(); 
+
+   initTable();     
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'readTable',
+                url: ctx + 'messageRead/list',
+                cols: [[
+                    {field: 'issueTime', title: '打开时间', minWidth: 100},
+                    {field: 'userName', title: '姓名'}, 
+                    {field: 'phone', title: '手机号'}, 
+                ]],
+                where: { msgId:  $searchForm.find('input[name="msgId"]').val() }
+            });
+        } 
+        
+    })
+</script>

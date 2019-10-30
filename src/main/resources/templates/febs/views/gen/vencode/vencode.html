@@ -1,0 +1,167 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-vencode" lay-title="短信管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="vencode-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">手机</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="phone" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                                                 
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="vencode:add,vencode:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="vencodeTable" lay-data="{id: 'vencodeTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/html" id="vencode-option">
+    <span shiro:lacksPermission="vencode:update,vencode:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="vencode:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="vencode:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-vencode'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('vencodeTable');
+                if (name === 'add') {
+                    febs.modal.open('新增短信', 'gen/vencode/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#vencode-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#vencode-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的短信');
+                    } else {
+                        febs.modal.confirm('删除短信', '确定删除该短信？', function () {
+                            var vencodeIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                vencodeIds.push(item.id)
+                            });
+                            deleteUsers(vencodeIds.join(','));
+                        });
+                    }
+                }
+            
+            },
+            options: [{
+                name: 'add',
+                title: '新增短信',
+                perms: 'vencode:add'
+            }, {
+                name: 'delete',
+                title: '删除短信',
+                perms: 'vencode:delete'
+            }]
+        });
+
+        table.on('tool(vencodeTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除短信', '确定删除该短信？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改短信', 'gen/vencode/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#vencode-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'vencodeTable',
+                url: ctx + 'vencode/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'phone', title: '手机', minWidth: 100},
+                    {field: 'code', title: '短信内容', minWidth: 100},
+                    {title: '发送时间', field: 'sendTime'},
+                    {field: 'memo', title: '备注'},                  
+                    {title: '操作', toolbar: '#vencode-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+           
+            return {             
+                phone: $searchForm.find('input[name="phone"]').val().trim(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(vencodeIds) {
+            febs.get(ctx + 'vencode/delete/' + vencodeIds, null, function () {
+                febs.alert.success('删除短信成功');
+                $query.click();
+            });
+        }
+    })
+</script>

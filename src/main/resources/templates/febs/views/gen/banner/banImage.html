@@ -1,0 +1,208 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-banInfo" lay-title="图片管理">
+    <div class="layui-row layui-col-space8 febs-container">
+        <div class="layui-col-md7 layui-col-sm6 layui-col-xs12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="banInfo-table-form" id="banInfo-table-form">
+                        <div class="layui-row">
+                           <div class="layui-form-item febs-hide">
+					            <label class="layui-form-label febs-form-item-require">banId：</label>
+					            <div class="layui-input-block">
+					                <input type="text" name="banId" id="banId" data-th-value="${banner.id}">
+					            </div>
+					        </div>
+                            <div class="layui-col-md3 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                               
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="banInfo:add,user:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="banInfoTable" lay-data="{id: 'banInfoTable'}"></table>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md5 layui-col-sm6 layui-col-xs12">
+            <div class="layui-card">
+                <div class="layui-card-header" id="form-header">新增图片</div>
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" action="" lay-filter="banInfo-form">
+                        <div class="layui-form-item febs-hide">
+                            <label class="layui-form-label febs-form-item-require">图片Id：</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="id" class="layui-input">
+					                <input type="text" name="banId" id="banId" data-th-value="${banner.id}">
+                            </div>
+                        </div>
+                      <div class="layui-form-item">
+                            <label class="layui-form-label febs-form-item-require">宽度：</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="width" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">图片：</label>
+                            <div class="layui-input-block">
+                                <textarea name="url" maxlength="50" class="layui-textarea"></textarea>
+                            </div>
+                        </div>
+                       
+                        <div class="layui-form-item febs-hide">
+                            <button type="reset" class="layui-btn" id="reset-form"></button>
+                            <button class="layui-btn" lay-submit="" lay-filter="banInfo-form-submit"
+                                    id="submit-form"></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="layui-card-footer">
+                    <button class="layui-btn" id="submit">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="banInfo-option">
+    <span shiro:lacksPermission="banInfo:update,banInfo:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="banInfo:update"><i class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="banInfo:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery',  'febs', 'form', 'table', 'validate'], function () {
+        var $ = layui.jquery,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            dropdown = layui.dropdown,
+            validate = layui.validate,
+            $view = $('#febs-banInfo'),
+            $query = $view.find('#query'),
+           
+            $submit = $view.find('#submit'),
+            $searchForm = $view.find('#banInfo-table-form'),
+            $header = $view.find('#form-header'),
+            tableIns;
+
+        form.verify(validate);
+        form.render();
+
+        initTable();
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('banInfoTable');
+                if (name === 'add') {
+                    resetbanInfoForm();
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的图片');
+                    } else {
+                        febs.modal.confirm('删除图片', '确定删除所选图片？', function () {
+                            var banInfoIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                banInfoIds.push(item.id);
+                            });
+                            deletebanInfos(banInfoIds.join(','));
+                        });
+                    }
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增图片',
+                perms: 'banInfo:add'
+            }, {
+                name: 'delete',
+                title: '删除图片',
+                perms: 'banInfo:delete'
+            }]
+        });
+
+        table.on('tool(banInfoTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;
+            if (layEvent === 'edit') {
+                $header.text('修改图片');
+                form.val("banInfo-form", {
+                    "id": data.id,
+                    "width": data.width,
+                    "url": data.url
+                });
+             
+            }
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除图片', '确定删除该图片？', function () {
+                    deletebanInfos(data.id);
+                });
+            }
+        });
+
+        $query.on('click', function () {
+            resetbanInfoForm();
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+      
+        $submit.on('click', function () {
+            $view.find('#submit-form').trigger('click');
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'banInfoTable',
+                url: ctx + 'banInfo/list',
+                where: {
+                	banId: $searchForm.find('input[name="banId"]').val(),
+                }
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'width', title: '宽度', minWidth: 120},
+                    {field: 'url', title: '图片地址'},
+                    {title: '操作', toolbar: '#banInfo-option', width: 100}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+            return {
+            	banId: $searchForm.find('input[name="banId"]').val(),  
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function resetbanInfoForm() {
+            $view.find('#reset-form').trigger('click');
+            $header.text('新增图片');         
+        }
+
+        function deletebanInfos(banInfoIds) {
+            febs.get(ctx + 'banInfo/delete/' + banInfoIds, null, function () {
+                febs.alert.success('删除图片成功');
+                $query.trigger('click');
+            })
+        }
+
+        var addOrUpdatebanInfo = function (data) {
+            if (data.id && $header.text() === '修改图片') {
+                febs.post(ctx + 'banInfo/update', data, function () {
+                    febs.alert.success('修改图片成功');
+                    $query.trigger('click');
+                });
+            } else {
+                febs.post(ctx + 'banInfo', data, function () {
+                    febs.alert.success('新增图片成功');
+                    $query.trigger('click');
+                });
+            }
+        }
+    });
+</script>

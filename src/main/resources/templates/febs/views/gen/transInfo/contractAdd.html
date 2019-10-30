@@ -1,0 +1,224 @@
+<style>
+#contract-add {
+	padding: 20px 25px 25px 0;
+}
+
+#contract-add .layui-treeSelect .ztree li a, .ztree li span {
+	margin: 0 0 2px 3px !important;
+}
+</style>
+
+<div class="layui-fluid" id="contract-add">
+	<form class="layui-form" action="" lay-filter="contract-add-form">
+		<div class="layui-form-item">
+			<label class="layui-form-label febs-form-item-require">市场：</label>
+			<div class="layui-input-block">				
+					<select name="marketId" id="marketId" lay-filter="marketsel" lay-verify="required">
+						<option value="">--请选择--</option>					
+					   <option th:each="market:${marketList}" th:value="${market.deptId}" th:text="${market.deptName}"></option>
+					</select>					
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">商户：</label>
+			<div class="layui-input-block">
+			<select name="merMarketId" id="merMarketId" lay-verify="required">
+						<option value="">--请选择--</option>					
+					</select>
+			</div>
+		</div>
+ <div class="layui-form-item">
+            <label class="layui-form-label">档口：</label>
+            <div class="layui-input-block">
+               <select name="deptId" id="deptId" 
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="contract-add-dept"
+                        xm-select-skin="default">
+										
+					</select>
+            </div>
+        </div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">合同编号：</label>
+			<div class="layui-input-block">
+				<input type="text" name="contractno" autocomplete="off"
+					class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">开始日期：</label>
+			<div class="layui-input-block">
+				<input type="text" name="begindate" id="begindate"
+					autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">结束日期：</label>
+			<div class="layui-input-block">
+				<input type="text" name="enddate" id="enddate" autocomplete="off"
+					class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">期限(年)：</label>
+			<div class="layui-input-block">
+				<input type="text" name="serrialno" lay-verify="number"
+					autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">经营项目：</label>
+			<div class="layui-input-block">
+				<input type="text" name="bussiitem" autocomplete="off"
+					class="layui-input">
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">月租：</label>
+			<div class="layui-input-block">
+				<input type="text" name="price" lay-verify="price"
+					autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">缴费时长(月)：</label>
+			<div class="layui-input-block">
+				<input type="text" name="type" lay-verify="number"
+					autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		
+        <div class="layui-form-item">
+            <label class="layui-form-label">上传合同：</label>
+            <div class="layui-input-block">
+                <input type="text" name="url" id="url" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" class="layui-upload-img" id="demo1">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">档口图片：</label>
+            <div class="layui-input-block">
+                <input type="text" name="photo" id="photo" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" class="layui-upload-img" id="demo2">
+            </div>
+        </div>
+          
+		<div class="layui-form-item febs-hide">
+			<button class="layui-btn" lay-submit=""
+				lay-filter="contract-add-form-submit" id="submit"></button>
+			<button type="reset" class="layui-btn" id="reset"></button>
+		</div>
+	</form>
+</div>
+
+<script>
+	layui.use([ 'febs', 'form', 'laydate', 'formSelects', 'validate','treeSelect', 'upload' , 'eleTree'],
+					function() {
+						var $ = layui.$, febs = layui.febs, layer = layui.layer, laydate = layui.laydate, formSelects = layui.formSelects, treeSelect = layui.treeSelect, form = layui.form, $view = $('#contract-add'),
+			            eleTree = layui.eleTree, validate = layui.validate, _deptTree;
+						var upload = layui.upload;
+						form.verify(validate);
+						form.render();
+						laydate.render({
+							elem : '#begindate',
+							range : false,
+							trigger : 'click'
+						});
+						laydate.render({
+							elem : '#enddate',
+							range : false,
+							trigger : 'click'
+						});
+
+						formSelects.render();
+
+						 
+						//医院下拉选事件,获取科室下拉选
+						form.on('select(marketsel)', function(data) {
+							var marketId = data.value;
+							$.ajax({
+								type : "get",
+								url : ctx + 'merMarket/'+marketId,
+								data : {marketId:marketId},
+								dataType : "json",
+								success : function(d) {
+									 var tmp = '<option value="">--请选择--</option>';
+									 //改变医院时第三级下拉框回复原样
+									// $("#division2").html(tmp);
+									 for ( var i in d) {
+										 tmp += '<option value="' + d[i].id +  '">' + d[i].merName + '</option>';
+									}
+									 $("#merMarketId").html(tmp);					
+									 form.render(); 
+								},
+								error:function(){
+									layer.alert('请求失败，稍后再试', {icon: 5});
+								}
+				 
+							});
+							$.ajax({
+								type : "get",
+								url : ctx + 'dept/getChild/'+marketId,
+								data : {marketId:marketId},
+								dataType : "json",
+								success : function(d) {
+									 var tmp = '';
+									 for ( var i in d) {
+										 tmp += '<option value="' + d[i].deptId +  '">' + d[i].deptName + '</option>';
+									}
+									 $("#deptId").html(tmp);					
+									 form.render(); 
+									 formSelects.render();
+									 treeSelect.render();
+								},
+								error:function(){
+									layer.alert('请求失败，稍后再试', {icon: 5});
+								}
+				 
+							});
+							
+						});
+
+					
+						//普通图片上传
+						var uploadInst = upload.render({
+									elem : '#demo1',
+									url : '/admin/xyz/qiniu',
+									before : function(obj) {
+										//预读本地文件示例，不支持ie8
+										obj.preview(function(index, file,
+												result) {
+											$('#demo1').attr('src', result); //图片链接（base64）
+										});
+									},
+									done : function(res) {
+										$('#url').attr('value', res.data); //图片链接（base64）
+									}									
+								});
+						var uploadInst2 = upload.render({
+									elem : '#demo2',
+									url : '/admin/xyz/qiniu',
+									before : function(obj) {
+										//预读本地文件示例，不支持ie8
+										obj.preview(function(index, file,
+												result) {
+											$('#demo2').attr('src', result); //图片链接（base64）
+										});
+									},
+									done : function(res) {
+										$('#photo').attr('value', res.data); //图片链接（base64）
+									}									
+								});
+						form.on('submit(contract-add-form-submit)', function(
+								data) {
+							febs.post(ctx + 'contract', data.field, function() {
+								layer.closeAll();
+								febs.alert.success('新增合同成功');
+								$('#febs-contract').find('#query').click();
+							});
+							return false;
+						});
+					});
+</script>

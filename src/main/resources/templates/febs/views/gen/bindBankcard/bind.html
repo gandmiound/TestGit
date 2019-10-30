@@ -1,0 +1,189 @@
+<style>
+#bind-add {
+	padding: 20px 25px 25px 0;
+}
+
+#bind-add .layui-treeSelect .ztree li a, .ztree li span {
+	margin: 0 0 2px 3px !important;
+}
+</style>
+<div class="layui-fluid" id="bind-add">
+	<form class="layui-form" action="" lay-filter="bind-add-form">
+		<div class="layui-form-item febs-hide">
+			<label class="layui-form-label febs-form-item-require">商户：</label>
+			<div class="layui-input-block">
+				<input type="text" name="merBlocId" autocomplete="off"
+					class="layui-input" data-th-value="${merBlocId}">
+
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label febs-form-item-require">姓名：</label>
+			<div class="layui-input-block">
+				<input type="text" name="name" lay-verify="required"
+					autocomplete="off" class="layui-input"> <input
+					type="hidden" name="signId" id="signId">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">手机：</label>
+			<div class="layui-input-block">
+				<input type="tel" name="phone" id="phone" lay-verify="phone"
+					autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">身份证：</label>
+			<div class="layui-input-block">
+				<input type="text" name="certId" lay-verify="identity"
+					maxlength="50" autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">银行卡号：</label>
+			<div class="layui-input-block">
+				<input type="text" name="bankCardNo" lay-verify="required|int"
+					maxlength="50" autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">银行名称：</label>
+			<div class="layui-input-block">
+				<select name="bankCode" lay-verify="required"
+					xm-select-direction="down" xm-select="bankNames" xm-select-radio
+					xm-select-skin="default">
+				</select>
+
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">银行地区：</label>
+			<div class="layui-input-block">
+				<select name="areaCode" lay-verify="required"
+					xm-select-direction="down" xm-select="areaCodes" xm-select-radio
+					xm-select-skin="default">
+				</select>
+			</div>
+		</div>
+		<div class="layui-form-item">
+
+			<label for="L_pass" class="layui-form-label">手机验证码</label>
+			<div class="layui-input-inline" style="width: 75%">
+				<div class="layui-col-xs10">
+					<input type="text" id="L_pass" name="code" autocomplete="off"
+						class="layui-input">
+				</div>
+				<div class="layui-col-xs2">
+					<button type="button" class="layui-btn" id="send_phone"
+						lay-submit="" lay-filter="getCode">
+						<span id="send_str">发送验证码</span>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="layui-form-item febs-hide">
+			<button class="layui-btn" lay-submit=""
+				lay-filter="bind-add-form-submit" id="submit"></button>
+			<button type="reset" class="layui-btn" id="reset"></button>
+		</div>
+	</form>
+</div>
+
+<script>
+
+	layui.use([ 'febs', 'form', 'formSelects', 'validate' ],function() {
+						var $ = layui.$, febs = layui.febs, admin = layui.admin, layer = layui.layer, formSelects = layui.formSelects, treeSelect = layui.treeSelect, form = layui.form, $view = $('#bind-add'), validate = layui.validate;
+						var i = second;
+			            var timer = null;
+						form.verify(validate);
+						form.render();
+
+						formSelects.render();
+
+						formSelects.config('bankNames',
+								{
+									searchUrl : ctx + 'bankCode',
+									response : {
+										statusCode : 200
+									},
+									beforeSuccess : function(id, url,
+											searchVal, result) {
+										var data = result.data;
+										var tranData = [];
+										for (var i = 0; i < data.length; i++) {
+											tranData.push({
+												name : data[i].bankName,
+												value : data[i].bankCode
+											})
+										}
+										result.data = tranData;
+										return result;
+									},
+									error : function(id, url, searchVal, err) {
+										console.error(err);
+										febs.alert.error('获取银行 列表失败');
+									}
+								});
+						formSelects.config('areaCodes',
+								{
+									searchUrl : ctx + 'areaCode',
+									response : {
+										statusCode : 200
+									},
+									beforeSuccess : function(id, url,
+											searchVal, result) {
+										var data = result.data;
+										var tranData = [];
+										for (var i = 0; i < data.length; i++) {
+											tranData.push({
+												name : data[i].areaName,
+												value : data[i].areaCode
+											})
+										}
+										result.data = tranData;
+										return result;
+									},
+									error : function(id, url, searchVal, err) {
+										console.error(err);
+										febs.alert.error('获取地区列表失败');
+									}
+								});
+						
+						form.on('submit(getCode)', function(data) {
+							 if (data.phone === '') {
+			                        febs.alert.error('手机号必填！');
+				                    return;
+				                }
+				                
+				                $.post(ctx + 'bind/getCode', data.field, function (r) {
+				                	  if (r.data.transStat === 'S') {
+				                		  $("#signId").val(r.data.signId);
+				                        febs.alert.success('发送成功');
+				                    }  else{
+				                    	var fn = function() {
+								            if(!i) {
+								            	$('.submit').removeClass('layui-btn-disabled').removeAttr('disabled',"true");
+								                clearInterval(timer);
+								            } 
+								            i--;
+								            };
+								            timer = setInterval(fn, 1000);
+								            fn();
+				                        $('.submit').addClass('layui-btn-disabled').attr('disabled',"true");
+				                        febs.alert.error(r.data.respMsg);
+				                       
+				                    }  
+				                });
+				                return false;
+						}); 
+						form.on('submit(bind-add-form-submit)', function(data) {
+							febs.post(ctx + 'bind/add', data.field, function() {
+								layer.closeAll();
+								febs.alert.success('绑卡成功');
+								$('#febs-bind').find('#query').click();
+							});
+							return false;
+						});
+					});
+</script>

@@ -1,0 +1,85 @@
+<style>
+    #febs-contracm-detail #contracm-img, #febs-contracm-detail .contracm-info {
+        display: inline-block;
+        float: left;
+        margin-left: 15px;
+    }
+
+    #febs-contracm-detail #contracm-img img {
+        width: 7rem;
+        margin: 10px 10px 0 20px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    #febs-contracm-detail #contracm-info-wrapper {
+        margin: 0 0 1rem 0;
+        display: inline-block;
+    }
+
+    #febs-contracm-detail .contracm-info div {
+        margin: 10px 15px;
+        max-width: 19rem;
+    }
+
+    #febs-contracm-detail #options-wrapper a {
+        padding: 4px 6px;
+        color: rgba(0, 0, 0, 0.65);
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+    }
+
+    #febs-contracm-detail #options-wrapper a:hover {
+        color: #40a9ff;
+        border-color: #40a9ff;
+    }
+
+</style>
+<div class="layui-fluid" id="febs-contracm-detail" lay-title="个人信息">
+    <div id="contracm-info-wrapper">
+        <div id="contracm-img">
+            <img alt="合同图片" title="合同图片" data-th-src="${contracm.url}">
+        </div>
+        <div class="contracm-info">
+            <div><span class="layui-icon"></span> 甲方姓名：
+                [[${contracm.contactman}]]
+            </div>
+            <div><span class="layui-icon"></span> 甲方地址：
+                [[${#strings.defaultString(contracm.address,'暂无地址')}]]
+            </div>
+            <div><span class="layui-icon"></span> 甲方手机：
+                [[${#strings.defaultString(contracm.phone,'无手机信息')}]]
+            </div>
+            <div><span class="layui-icon"></span> 合同编号：
+                [[${contracm.contractno}]]
+            </div>
+            <div><span class="layui-icon"></span> 订金：
+                [[${contracm.bond}]]
+            </div>
+            <div><span class="layui-icon"></span> 配套费：
+                [[${contracm.supportAmt}]]
+            </div>
+            
+        </div>
+        <div class="contracm-info">
+            <div><span class="layui-icon"></span> 开始日期：
+                [[${#strings.defaultString(contracm.begindate,'无开始日期')}]]
+            </div>
+            <div><span class="layui-icon"></span> 结束日期：
+                [[${#strings.defaultString(contracm.enddate,'无结束日期')}]]
+            </div>
+            <div><span class="layui-icon"></span> 期限：
+                [[${contracm.serrialno}]]
+            </div>
+            <div><span class="layui-icon"></span> 经营范围：
+                [[${contracm.bussiitem}]]
+            </div>
+            <div><span class="layui-icon"></span> 月租：
+                [[${contracm.price}]]
+            </div>
+            <div> 缴费时长(月)：
+                [[${contracm.type}]]
+            </div>
+        </div>
+    </div>
+</div>

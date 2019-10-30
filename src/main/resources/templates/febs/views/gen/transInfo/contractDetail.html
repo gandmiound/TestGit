@@ -1,0 +1,85 @@
+<style>
+    #febs-contract-detail #contract-img, #febs-contract-detail .contract-info {
+        display: inline-block;
+        float: left;
+        margin-left: 15px;
+    }
+
+    #febs-contract-detail #contract-img img {
+        width: 7rem;
+        margin: 10px 10px 0 20px;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    #febs-contract-detail #contract-info-wrapper {
+        margin: 0 0 1rem 0;
+        display: inline-block;
+    }
+
+    #febs-contract-detail .contract-info div {
+        margin: 10px 15px;
+        max-width: 19rem;
+    }
+
+    #febs-contract-detail #options-wrapper a {
+        padding: 4px 6px;
+        color: rgba(0, 0, 0, 0.65);
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+    }
+
+    #febs-contract-detail #options-wrapper a:hover {
+        color: #40a9ff;
+        border-color: #40a9ff;
+    }
+
+</style>
+<div class="layui-fluid" id="febs-contract-detail" lay-title="个人信息">
+    <div id="contract-info-wrapper">
+        <div id="contract-img">
+            <img alt="合同图片" title="合同图片" data-th-src="${contract.url}">
+        </div>
+        <div class="contract-info">
+            <div><span class="layui-icon"></span> 甲方姓名：
+                [[${contract.contactman}]]
+            </div>
+            <div><span class="layui-icon"></span> 甲方地址：
+                [[${#strings.defaultString(contract.address,'暂无地址')}]]
+            </div>
+            <div><span class="layui-icon"></span> 甲方手机：
+                [[${#strings.defaultString(contract.phone,'无手机信息')}]]
+            </div>
+            <div><span class="layui-icon"></span> 合同编号：
+                [[${contract.contractno}]]
+            </div>
+            <div><span class="layui-icon"></span> 订金：
+                [[${contract.bond}]]
+            </div>
+            <div><span class="layui-icon"></span> 配套费：
+                [[${contract.supportAmt}]]
+            </div>
+            
+        </div>
+        <div class="contract-info">
+            <div><span class="layui-icon"></span> 开始日期：
+                [[${#strings.defaultString(contract.begindate,'无开始日期')}]]
+            </div>
+            <div><span class="layui-icon"></span> 结束日期：
+                [[${#strings.defaultString(contract.enddate,'无结束日期')}]]
+            </div>
+            <div><span class="layui-icon"></span> 期限：
+                [[${contract.serrialno}]]
+            </div>
+            <div><span class="layui-icon"></span> 经营范围：
+                [[${contract.bussiitem}]]
+            </div>
+            <div><span class="layui-icon"></span> 月租：
+                [[${contract.price}]]
+            </div>
+            <div> 缴费时长(月)：
+                [[${contract.type}]]
+            </div>
+        </div>
+    </div>
+</div>

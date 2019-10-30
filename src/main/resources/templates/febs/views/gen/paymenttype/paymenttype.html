@@ -1,0 +1,178 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-paymenttype" lay-title="缴费分类管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="paymenttype-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">类型名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="name" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                                                 
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="paymenttype:add,paymenttype:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="paymenttypeTable" lay-data="{id: 'paymenttypeTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="type-status">
+    {{#
+    var status = {
+    1: {title: '否', color: 'green'},
+    0: {title: '是', color: 'volcano'}
+    }[d.isValid];
+    }}
+    <span class="layui-badge febs-tag-{{status.color}}">{{ status.title }}</span>
+</script>
+
+<script type="text/html" id="paymenttype-option">
+    <span shiro:lacksPermission="paymenttype:update,paymenttype:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="paymenttype:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="paymenttype:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-paymenttype'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('paymenttypeTable');
+                if (name === 'add') {
+                    febs.modal.open('新增缴费分类', 'gen/paymenttype/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#paymenttype-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#paymenttype-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要禁用的缴费分类');
+                    } else {
+                        febs.modal.confirm('禁用缴费分类', '确定禁用该缴费分类？', function () {
+                            var paymenttypeIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                paymenttypeIds.push(item.id)
+                            });
+                            deleteUsers(paymenttypeIds.join(','));
+                        });
+                    }
+                }
+            
+            },
+            options: [{
+                name: 'add',
+                title: '新增缴费分类',
+                perms: 'paymenttype:add'
+            }, {
+                name: 'delete',
+                title: '禁用缴费分类',
+                perms: 'paymenttype:delete'
+            }]
+        });
+
+        table.on('tool(paymenttypeTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('禁用缴费分类', '确定禁用该缴费分类？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改缴费分类', 'gen/paymenttype/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#paymenttype-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'paymenttypeTable',
+                url: ctx + 'paymenttype/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'name', title: '类型名称', minWidth: 100},
+                    {title: '是否禁用',templet: '#type-status'},
+                    {field: 'memo', title: '备注'},     
+                    {title: '操作', toolbar: '#paymenttype-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+           
+            return {             
+                name: $searchForm.find('input[name="name"]').val().trim(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(paymenttypeIds) {
+            febs.get(ctx + 'paymenttype/delete/' + paymenttypeIds, null, function () {
+                febs.alert.success('禁用缴费分类成功');
+                $query.click();
+            });
+        }
+    })
+</script>

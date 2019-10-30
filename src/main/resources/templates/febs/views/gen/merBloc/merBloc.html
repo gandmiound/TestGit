@@ -1,0 +1,186 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-merBloc" lay-title="集团商户管理">
+    <div class="layui-row layui-col-space8 febs-container">
+        <div class="layui-col-md7 layui-col-sm6 layui-col-xs12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="merBloc-table-form" id="merBloc-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md9 layui-col-sm9 layui-col-xs9">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">商户名称</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="merName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md3 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>                               
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="merBlocTable" lay-data="{id: 'merBlocTable'}"></table>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md5 layui-col-sm6 layui-col-xs12">
+            <div class="layui-card">
+                <div class="layui-card-header" id="form-header">新增商户</div>
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" action="" lay-filter="merBloc-form">
+                        
+                        <div class="layui-form-item">
+                            <label class="layui-form-label febs-form-item-require">商户名称：</label>
+                            <div class="layui-input-block">
+                                <select name="merId"
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="bloc-add-mer"
+                        xm-select-skin="default">
+                </select>
+                            </div>
+                        </div>
+                     
+                       
+                        <div class="layui-form-item febs-hide">
+                            <button type="reset" class="layui-btn" id="reset-form"></button>
+                            <button class="layui-btn" lay-submit="" lay-filter="merBloc-form-submit"
+                                    id="submit-form"></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="layui-card-footer">
+                    <button class="layui-btn" id="submit">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="merBloc-option">
+    <span shiro:lacksPermission="bindBankcard:add,bindBankcard:list">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+   <a lay-event="bind" shiro:hasPermission="bindBankcard:add" title="绑卡"><i
+            class="layui-icon febs-edit-area febs-blue">绑卡</i></a>
+    <a lay-event="bindview" shiro:hasPermission="bindBankcard:list" title="绑卡信息"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['jquery',  'febs', 'form', 'formSelects', 'table', 'validate'], function () {
+        var $ = layui.jquery,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            formSelects = layui.formSelects,
+            validate = layui.validate,
+            $view = $('#febs-merBloc'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $submit = $view.find('#submit'),
+            $searchForm = $view.find('#merBloc-table-form'),
+            tableIns;
+
+        form.verify(validate);
+        form.render();
+        formSelects.render();
+
+        initTable();
+        table.on('tool(merBlocTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+     
+            if (layEvent === 'bind') {
+                febs.modal.open('绑卡', 'gen/bind/'+data.id, {
+                	btn: ['提交', '重置'],
+                    data: data,
+                    area: $(window).width() <= 750 ? '95%' : '50%',
+                    yes: function (index, layero) {
+                        $('#bind-add').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        $('#bind-add').find('#reset').trigger('click');
+                        return false;
+                    }
+                });
+            }
+            if (layEvent === 'bindview') {
+                febs.modal.open(data.merName+'绑卡信息', 'gen/bindview/'+data.id, {
+                	area: $(window).width() <= 750 ? '95%' : '1000px',
+                    data: data
+                });
+            }
+        });
+
+        formSelects.config('bloc-add-mer', {
+            searchUrl: ctx + 'merBloc/unbind',
+            response: {
+                statusCode: 200
+            },
+            beforeSuccess: function (id, url, searchVal, result) {
+                var data = result.data;
+                var tranData = [];
+                for (var i = 0; i < data.length; i++) {
+                    tranData.push({
+                        name: data[i].merName,
+                        value: data[i].merId
+                    })
+                }
+                result.data = tranData;
+                return result;
+            },
+            error: function (id, url, searchVal, err) {
+                console.error(err);
+                febs.alert.error('获取商户列表失败');
+            }
+        });
+
+
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        $reset.on('click', function () {
+            $searchForm[0].reset();
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        $submit.on('click', function () {
+            $view.find('#submit-form').trigger('click');
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'merBlocTable',
+                url: ctx + 'merBloc/list',
+                cols: [[
+                    {field: 'merName', title: '商户名'},
+                    {field: 'blocname', title: '集团名'},
+                    {field: 'maccount', title: '账户余额', minWidth: 180},
+                    {title: '操作', toolbar: '#merBloc-option', width: 100}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+            return {
+                merName: $searchForm.find('input[name="merName"]').val().trim(),
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+     
+        form.on('submit(merBloc-form-submit)', function (data) {
+        	 febs.post(ctx + 'merBloc', data, function () {
+                 febs.alert.success('新增集团商户成功');
+                 $query.trigger('click');
+             });  
+        });     
+    });
+</script>

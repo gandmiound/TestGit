@@ -1,0 +1,69 @@
+<style>
+    #bankCode-add {
+        padding: 20px 25px 25px 0;
+    }
+    #bankCode-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="bankCode-add">
+    <form class="layui-form" action="" lay-filter="bankCode-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">银行：</label>
+            <div class="layui-input-block">
+                <input type="text" name="verssion"  lay-verify="verssion"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">银行名：</label>
+            <div class="layui-input-block">
+                <input type="text" name="bankName" lay-verify="bankName" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">银行编码：</label>
+            <div class="layui-input-block">
+                <input type="text" name="bankCode" lay-verify="bankCode" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">序号：</label>
+            <div class="layui-input-block">
+                <input type="text" name="showIndex" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+ 
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="bankCode-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs', 'form', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            $view = $('#bankCode-add'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        formSelects.render();
+        form.on('submit(bankCode-add-form-submit)', function (data) {
+            febs.post(ctx + 'bankCode', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增银行成功');
+                $('#febs-bankCode').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

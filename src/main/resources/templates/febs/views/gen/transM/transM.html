@@ -1,0 +1,303 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-transM"
+	lay-title="账单管理">
+	<div class="layui-row febs-container">
+		<div class="layui-col-md12">
+			<div class="layui-card">
+				<div class="layui-card-body febs-table-full">
+					<form class="layui-form layui-table-form"
+						lay-filter="transM-table-form">
+						<div class="layui-row">
+							<div class="layui-col-md10">
+								<div class="layui-form-item">
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">账单状态</label>
+										<div class="layui-input-inline">
+											<select name="stat" id="stat">
+												<option value="">全部
+													</optionn> 失败
+													<option value="0">
+											</optionn> 成功
+													<option value="1">
+												</optionn></select>
+										</div>
+									</div>
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">账单时间</label>
+										<div class="layui-input-inline">
+											<input type="text" name="billTime" id="billTime"
+												class="layui-input">
+										</div>
+									</div>
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">缴费时间</label>
+										<div class="layui-input-inline">
+											<input type="text" name="payTime" id="payTime"
+												class="layui-input">
+										</div>
+									</div>
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">市场名</label>
+										<div class="layui-input-inline">
+											<input type="text" name="marketName" id="marketName"
+												class="layui-input">
+										</div>
+									</div>
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">甲方名</label>
+										<div class="layui-input-inline">
+											<input type="text" name="contactman" id="contactman"
+												class="layui-input">
+										</div>
+									</div>
+
+								</div>
+							</div>
+							<div
+								class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+								<div
+									class="layui-btn layui-btn-sm layui-btn-primary table-action"
+									id="query">
+									<i class="layui-icon">&#xe848;</i>
+								</div>
+								<div
+									class="layui-btn layui-btn-sm layui-btn-primary table-action"
+									id="reset">
+									<i class="layui-icon">&#xe79b;</i>
+								</div>
+								<div
+									class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+									shiro:hasAnyPermissions="transM:add,transM:export">
+									<i class="layui-icon">&#xe875;</i>
+								</div>
+							</div>
+						</div>
+					</form>
+					<table lay-filter="transMTable" lay-data="{id: 'transMTable'}"></table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script type="text/html" id="transM-option">
+    <span shiro:lacksPermission="transM:update,transM:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="transM:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="transM:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+	layui
+			.use(
+					[ 'dropdown', 'jquery', 'laydate', 'form', 'table', 'febs',
+							'treeSelect' ],
+					function() {
+						var $ = layui.jquery, laydate = layui.laydate, febs = layui.febs, form = layui.form, table = layui.table, treeSelect = layui.treeSelect, dropdown = layui.dropdown, $view = $('#febs-transM'), $query = $view
+								.find('#query'), $reset = $view.find('#reset'), $searchForm = $view
+								.find('form'), tableIns;
+
+						form.render();
+
+						initTable();
+						laydate.render({
+							elem : '#billTime',
+							range : true,
+							trigger : 'click'
+						});
+						laydate.render({
+							elem : '#payTime',
+							range : true,
+							trigger : 'click'
+						});
+
+						dropdown
+								.render({
+									elem : $view.find('.action-more'),
+									click : function(name, elem, event) {
+										var checkStatus = table
+												.checkStatus('transMTable');
+										if (name === 'add') {
+											febs.modal
+													.open(
+															'新增账单信息',
+															'gen/transM/add',
+															{
+																btn : [ '提交',
+																		'重置' ],
+																area : $(window)
+																		.width() <= 750 ? '95%'
+																		: '50%',
+																yes : function(
+																		index,
+																		layero) {
+																	$(
+																			'#transM-add')
+																			.find(
+																					'#submit')
+																			.trigger(
+																					'click');
+																},
+																btn2 : function() {
+																	$(
+																			'#transM-add')
+																			.find(
+																					'#reset')
+																			.trigger(
+																					'click');
+																	return false;
+																}
+															});
+										}
+										if (name === 'delete') {
+											if (!checkStatus.data.length) {
+												febs.alert.warn('请选择需要删除的账单信息');
+											} else {
+												febs.modal
+														.confirm(
+																'删除账单信息',
+																'确定删除该账单信息？',
+																function() {
+																	var transMIds = [];
+																	layui
+																			.each(
+																					checkStatus.data,
+																					function(
+																							key,
+																							item) {
+																						transMIds
+																								.push(item.id)
+																					});
+																	deleteUsers(transMIds
+																			.join(','));
+																});
+											}
+										}
+
+									},
+									options : [ {
+										name : 'add',
+										title : '新增账单信息',
+										perms : 'transM:add'
+									}, {
+										name : 'export',
+										title : '导出账单信息',
+										perms : 'transM:export'
+									} ]
+								});
+
+						table.on('tool(transMTable)', function(obj) {
+							var data = obj.data, layEvent = obj.event;
+							if (layEvent === 'del') {
+								febs.modal.confirm('删除账单信息', '确定删除该账单信息？',
+										function() {
+											deleteUsers(data.id);
+										});
+							}
+							if (layEvent === 'edit') {
+								febs.modal.open('修改账单信息', 'gen/transM/update/'
+										+ data.id, {
+									area : $(window).width() <= 750 ? '90%'
+											: '50%',
+									btn : [ '提交', '取消' ],
+									yes : function(index, layero) {
+										$('#transM-update').find('#submit')
+												.trigger('click');
+									},
+									btn2 : function() {
+										layer.closeAll();
+									}
+								});
+							}
+						});
+
+						$query.on('click', function() {
+							tableIns.reload({
+								where : getQueryParams(),
+								page : {
+									curr : 1
+								}
+							});
+						});
+
+						function initTable() {
+							tableIns = febs.table.init({
+								elem : $view.find('table'),
+								id : 'transMTable',
+								url : ctx + 'transM/list',
+								cols : [ [ {
+									type : 'checkbox'
+								}, {
+									field : 'price',
+									title : '交易金额',
+									minWidth : 100
+								}, {
+									field : 'receivedAmt',
+									title : '已收金额',
+									minWidth : 100
+								}, {
+									title : '状态',
+									field : 'stat'
+								}, {
+									field : 'createTime',
+									title : '创建时间'
+								}, {
+									field : 'msgTime',
+									title : '开始缴费时间'
+								}, {
+									field : 'orderNum',
+									title : '商户订单号'
+								}, {
+									field : 'begindate',
+									title : '账单开始日'
+								}, {
+									field : 'enddate',
+									title : '账单结束日'
+								}, {
+									field : 'contractid',
+									title : '合同ID'
+								}, {
+									field : 'lastTime',
+									title : '最后缴费日'
+								}, {
+									title : '操作',
+									toolbar : '#transM-option',
+									minWidth : 140
+								} ] ]
+							});
+						}
+
+						function getQueryParams() {
+							var billTimeFrom, billTimeTo, billTime = $searchForm
+									.find('input[name="billTime"]').val(), payTimeFrom, payTimeTo, payTime = $searchForm
+									.find('input[name="payTime"]').val();
+							if (billTime) {
+								billTimeFrom = billTime.split(' - ')[0];
+								billTimeTo = billTime.split(' - ')[1];
+							}
+
+							if (payTime) {
+								payTimeFrom = payTime.split(' - ')[0];
+								payTimeTo = payTime.split(' - ')[1];
+							}
+							return {
+								billTimeFrom: billTimeFrom,
+				                billTimeTo: billTimeTo,
+				                payTimeFrom: payTimeFrom,
+				                payTimeTo: payTimeTo,
+				                contactman: $searchForm.find('input[name="contactman"]').val().trim(),  
+				                stat: $searchForm.find('select[name="stat"]').val().trim(), 
+								invalidate_ie_cache : new Date()
+							};
+						}
+
+						function deleteUsers(transMIds) {
+							febs.get(ctx + 'transM/delete/' + transMIds, null,
+									function() {
+										febs.alert.success('删除账单信息成功');
+										$query.click();
+									});
+						}
+					})
+</script>

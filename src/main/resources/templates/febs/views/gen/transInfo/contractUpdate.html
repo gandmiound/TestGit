@@ -1,0 +1,196 @@
+<style>
+    #transInfo-update {
+        padding: 20px 25px 25px 0;
+    }
+
+    #transInfo-update .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="transInfo-update">
+    <form class="layui-form" action="" lay-filter="transInfo-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">合同id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${transInfo.id}">
+            </div>
+        </div>
+         <div class="layui-form-item">
+            <label class="layui-form-label">档口：</label>
+            <div class="layui-input-block">
+               <select name="deptId" id="deptId" 
+                        lay-verify="required"
+                        xm-select-direction="down"
+                        xm-select="transInfo-update-dept"
+                        xm-select-skin="default">										
+					</select>
+            </div>
+        </div>
+       <div class="layui-form-item">
+            <label class="layui-form-label">账单开始日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="beginDate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">账单结束日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="endDate" id="endDate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">账单金额：</label>
+            <div class="layui-input-block">
+                <input type="text" name="price" id="price"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">已收金额：</label>
+            <div class="layui-input-block">
+                <input type="number" name="receivedAmt" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始缴费时间：</label>
+            <div class="layui-input-block">
+                <input type="text" name="msgTime"  autocomplete="off" class="layui-input">
+            </div>
+        </div>       
+        <div class="layui-form-item">
+            <label class="layui-form-label">最后缴费时间：</label>
+            <div class="layui-input-block">
+                <input type="text" name="lastTime" lay-verify="lastTime" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">备注：</label>
+            <div class="layui-input-block">
+                <input type="number" name="memo" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+     
+       
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="transInfo-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'laydate', 'formSelects', 'validate', 'treeSelect', 'upload'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            transInfo = [[${transInfo}]],
+            $view = $('#transInfo-update'),
+            validate = layui.validate,
+            upload = layui.upload;
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+    
+        function initUserValue() {
+            form.val("transInfo-update-form", {            
+                "transInfono": transInfo.transInfono,
+                "begindate": transInfo.begindate,
+                "enddate": transInfo.enddate,
+                "serrialno": transInfo.serrialno,
+                "bussiitem": transInfo.bussiitem,
+                "price": transInfo.price,
+                "type": transInfo.type,
+                "url": transInfo.url,
+                "photo": transInfo.photo
+            });
+        }
+    
+        laydate.render({
+            elem: '#begindate',
+            range: false,
+            trigger: 'click'
+        });
+        laydate.render({
+            elem: '#enddate',
+            range: false,
+            trigger: 'click'
+        });
+    	//普通图片上传
+		var uploadInst = upload.render({
+					elem : '#demo1',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo1').attr('src', result); //图片链接（base64）
+							
+						});
+					},
+					done : function(res) {	
+						 form.val("transInfo-update-form", {				                
+				                "url": res.data
+				            });
+					}									
+				});
+		var uploadInst2 = upload.render({
+					elem : '#demo2',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo2').attr('src', result); //图片链接（base64）
+						});
+					},
+					done : function(res) {
+						 form.val("transInfo-update-form", {				                
+				                "photo": res.data
+				            });
+					}									
+				});
+		formSelects.config('transInfo-update-dept', {
+            searchUrl: ctx + 'dept/getChild2/'+transInfo.marketId,
+            response: {
+                statusCode: 200
+            },
+            beforeSuccess: function (id, url, searchVal, result) {
+                var data = result.data;
+                var tranData = [];
+                for (var i = 0; i < data.length; i++) {
+                    tranData.push({
+                        name: data[i].deptName,
+                        value: data[i].deptId
+                    })
+                }
+                result.data = tranData;
+                return result;
+            },
+            success: function () {
+                formSelects.value('transInfo-update-dept', transInfo.deptId.split(','));
+            },
+            error: function (id, url, searchVal, err) {
+                console.error(err);
+                febs.alert.error('获取角色列表失败');
+            }
+        });
+		
+        form.on('submit(transInfo-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, transInfo)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'transInfo/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('合同数据修改成功');
+                $('#febs-transInfo').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

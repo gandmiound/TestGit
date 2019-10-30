@@ -1,0 +1,85 @@
+<style>
+    #version-add {
+        padding: 20px 25px 25px 0;
+    }
+    #version-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="version-add">
+    <form class="layui-form" action="" lay-filter="version-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">版本：</label>
+            <div class="layui-input-block">
+                <input type="text" name="verssion"  lay-verify="required"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否强更：</label>
+            <div class="layui-input-block">
+                <select class="layui-input" id="type" 
+						name="type">
+						<option value="1">强制更新</option>
+						<option value="2">选择更新</option>
+						<option value="3">不需更新</option>
+					</select>
+
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">平台：</label>
+            <div class="layui-input-block">
+                <select class="layui-input" id="platform"  name="platform">
+						<option value="01">android</option>
+						<option value="02">IOS</option>
+					</select>
+
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">更新地址：</label>
+            <div class="layui-input-block">
+                <input type="text" name="url" lay-verify="url" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">描述：</label>
+            <div class="layui-input-block">
+                <input type="text" name="description"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+ 
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="version-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs', 'form', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            $view = $('#version-add'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        formSelects.render();
+        form.on('submit(version-add-form-submit)', function (data) {
+            febs.post(ctx + 'version', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增用户成功');
+                $('#febs-version').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

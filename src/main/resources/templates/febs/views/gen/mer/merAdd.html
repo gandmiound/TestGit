@@ -1,0 +1,64 @@
+<style>
+    #mer-add {
+        padding: 20px 25px 25px 0;
+    }
+    #mer-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="mer-add">
+    <form class="layui-form" action="" lay-filter="mer-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">商户名：</label>
+            <div class="layui-input-block">
+                <input type="text" name="mername" minlength="2" maxlength="10" lay-verify="range|mername"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">手机：</label>
+            <div class="layui-input-block">
+                <input type="tel" name="phone" lay-verify="phone" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">身份证：</label>
+            <div class="layui-input-block">
+                <input type="text" name="certId" lay-verify="certId" maxlength="50" autocomplete="off"
+                       class="layui-input">
+            </div>
+        </div>
+             
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="mer-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs', 'form', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            $view = $('#mer-add'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        formSelects.render();
+
+        form.on('submit(mer-add-form-submit)', function (data) {
+            febs.post(ctx + 'mer', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增用户成功，初始密码为身份证后6位 ');
+                $('#febs-mer').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

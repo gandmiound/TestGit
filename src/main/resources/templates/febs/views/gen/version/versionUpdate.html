@@ -1,0 +1,105 @@
+<style>
+    #version-update {
+        padding: 20px 25px 25px 0;
+    }
+
+    #version-update .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="version-update">
+    <form class="layui-form" action="" lay-filter="version-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">版本：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${version.id}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">版本名：</label>
+            <div class="layui-input-block">
+                <input type="text" name="verssion"  lay-verify="verssion" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否强更：</label>
+            <div class="layui-input-block">
+                <select class="layui-input" id="type" 
+						name="type">
+						<option value="1">强制更新</option>
+						<option value="2">选择更新</option>
+						<option value="3">不需更新</option>
+					</select>
+
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">平台：</label>
+            <div class="layui-input-block">
+                <select class="layui-input" id="platform"  name="platform">
+						<option value="01">android</option>
+						<option value="02">IOS</option>
+					</select>
+
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">更新地址：</label>
+            <div class="layui-input-block">
+                <input type="text" name="url" lay-verify="url" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">描述：</label>
+            <div class="layui-input-block">
+                <input type="text" name="description"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="version-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'formSelects', 'validate', 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            version = [[${version}]],
+            $view = $('#version-update'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+    
+        function initUserValue() {
+            form.val("version-update-form", {
+                "verssion": version.verssion,
+                "type": version.type,
+                "url": version.url,
+                "description": version.description,
+                "platForm": version.platForm
+            });
+        }
+
+        form.on('submit(version-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, version)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'version/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('版本信息修改成功');
+                $('#febs-version').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

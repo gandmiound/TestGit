@@ -1,0 +1,75 @@
+<style>
+    #banInfo-add {
+        padding: 20px 25px 25px 0;
+    }
+    #banInfo-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="banInfo-add">
+    <form class="layui-form" action="" lay-filter="banInfo-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">宽度：</label>
+            <div class="layui-input-block">
+                <input type="number" name="width"  lay-verify="number"
+                       autocomplete="off" class="layui-input">
+                <input type="hidden" name="banId"   data-th-value="${banId}"
+                      class="layui-input">
+            </div>
+        </div>
+     
+        <div class="layui-form-item">
+            <label class="layui-form-label">图片：</label>
+            <div class="layui-input-block">
+                <input type="hidden" name="url" id="url" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" class="layui-upload-img" id="demo1">
+            </div>
+        </div>   
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="banInfo-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs',  'form', 'formSelects','upload' , 'validate'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            form = layui.form,
+            $view = $('#banInfo-add'),
+            validate = layui.validate;
+        var upload = layui.upload;
+        form.verify(validate);
+        form.render();
+     
+        formSelects.render();
+        
+      //普通图片上传
+		var uploadInst = upload.render({
+					elem : '#demo1',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo1').attr('src', result); //图片链接（base64）
+						});
+					},
+					done : function(res) {
+						$('#url').attr('value', res.data); //图片链接（base64）
+					}									
+				});
+        form.on('submit(banInfo-add-form-submit)', function (data) {
+            febs.post(ctx + 'banInfo', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增图片成功');
+                $('#febs-banInfo').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

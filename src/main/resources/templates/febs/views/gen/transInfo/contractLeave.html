@@ -1,0 +1,90 @@
+<style>
+    #contract-leave {
+        padding: 20px 25px 25px 0;
+    }
+
+    #contract-leave .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="contract-leave">
+    <form class="layui-form" action="" lay-filter="contract-leave-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">合同id：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${contract.id}">
+            </div>
+        </div>
+     
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="leavingtime" id="leavingtime"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+     
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款金额：</label>
+            <div class="layui-input-block">
+                <input type="text" name="leavingPrice"  autocomplete="off" class="layui-input">
+            </div>
+        </div>       
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款原因：</label>
+            <div class="layui-input-block">
+                <input type="text" name="memo"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+     
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="contract-leave-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'form', 'laydate', 'validate'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            form = layui.form,
+            contract = [[${contract}]],
+            $view = $('#contract-leave'),
+            validate = layui.validate;
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+    
+        function initUserValue() {
+            form.val("contract-leave-form", {
+                "leavingtime": contract.leavingtime,
+                "leavingPrice": contract.leavingPrice,
+                "memo": contract.memo
+            });
+        }
+    
+        laydate.render({
+            elem: '#leavingtime',
+            range: false,
+            trigger: 'click'
+        });
+      
+    
+        form.on('submit(contract-leave-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, contract)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'contract/leave', data.field, function () {
+                layer.closeAll();
+                febs.alert.success( '离场信息修改成功');
+                $('#febs-contract').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

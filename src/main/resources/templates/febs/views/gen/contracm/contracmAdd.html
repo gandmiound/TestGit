@@ -1,0 +1,184 @@
+<style>
+    #contracm-add {
+        padding: 20px 25px 25px 0;
+    }
+    #contracm-add .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="contracm-add">
+    <form class="layui-form" action="" lay-filter="contracm-add-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">市场：</label>
+            <div class="layui-input-block">
+             <select name="marketId" lay-verify="required"
+					xm-select-direction="down" xm-select="markets" xm-select-radio
+					xm-select-skin="default">
+				</select>               
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">甲方姓名：</label>
+            <div class="layui-input-block">
+                <input type="text" name="contactman" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">甲方地址：</label>
+            <div class="layui-input-block">
+                <input type="text" name="address" lay-verify="required" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">甲方手机：</label>
+            <div class="layui-input-block">
+                <input type="text" name="phone" lay-verify="phone" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">合同编号：</label>
+            <div class="layui-input-block">
+                <input type="text" name="contractno"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">开始日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="begindate" id="begindate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">结束日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="enddate" id="enddate"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">期限(年)：</label>
+            <div class="layui-input-block">
+                <input type="text" name="serrialno" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">经营项目：</label>
+            <div class="layui-input-block">
+                <input type="text" name="bussiitem"  autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">订金：</label>
+            <div class="layui-input-block">
+                <input type="text" name="bond" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">配套费：</label>
+            <div class="layui-input-block">
+                <input type="text" name="supportAmt" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">月租：</label>
+            <div class="layui-input-block">
+                <input type="text" name="price" lay-verify="price" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">缴费时长(月)：</label>
+            <div class="layui-input-block">
+                <input type="text" name="type" lay-verify="number" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">上传合同：</label>
+            <div class="layui-input-block">
+              <input type="hidden" name="url" id="url" lay-verify="url" autocomplete="off" class="layui-input">
+                <img style="width:100px;height:100px;" src="febs/images/plus.png" class="layui-upload-img" id="demo1">
+           
+            </div>
+        </div>
+ 
+      
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="contracm-add-form-submit" id="submit"></button>
+            <button type="reset" class="layui-btn" id="reset"></button>
+        </div>
+    </form>
+</div>
+
+<script>
+    layui.use(['febs', 'form', 'laydate','formSelects', 'validate','upload' , 'treeSelect'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            laydate = layui.laydate,
+            formSelects = layui.formSelects,
+            treeSelect = layui.treeSelect,
+            form = layui.form,
+            $view = $('#contracm-add'),
+            validate = layui.validate;
+        var upload = layui.upload;
+        form.verify(validate);
+        form.render();
+        
+		formSelects.render();
+     	formSelects.config('markets',
+			{
+				searchUrl : ctx + 'dept/market/null',
+				response : {
+					statusCode : 200
+				},
+				beforeSuccess : function(id, url,
+						searchVal, result) {
+					var data = result.data;
+					var tranData = [];
+					for (var i = 0; i < data.length; i++) {
+						tranData.push({
+							name : data[i].deptName,
+							value : data[i].deptId
+						})
+					}
+					result.data = tranData;
+					return result;
+				},
+				error : function(id, url, searchVal, err) {
+					console.error(err);
+					febs.alert.error('获取市场失败');
+				}
+			});
+        laydate.render({
+            elem: '#begindate',
+            range: false,
+            trigger: 'click'
+        });
+        laydate.render({
+            elem: '#enddate',
+            range: false,
+            trigger: 'click'
+        });
+        formSelects.render();
+      //普通图片上传
+		var uploadInst = upload.render({
+					elem : '#demo1',
+					url : '/admin/xyz/qiniu',
+					before : function(obj) {
+						//预读本地文件示例，不支持ie8
+						obj.preview(function(index, file,
+								result) {
+							$('#demo1').attr('src', result); //图片链接（base64）
+						});
+					},
+					done : function(res) {
+						$('#url').attr('value', res.data); //图片链接（base64）
+					}									
+				});
+        form.on('submit(contracm-add-form-submit)', function (data) {
+            febs.post(ctx + 'contracm', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('新增用户成功');
+                $('#febs-contracm').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

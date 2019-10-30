@@ -1,0 +1,188 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-message" lay-title="消息管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="message-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">标题</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="title" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                                                 
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="message:add,message:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="messageTable" lay-data="{id: 'messageTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="message-status">
+    {{#
+    var status = {
+    1: {title: '否', color: 'green'},
+    0: {title: '是', color: 'volcano'}
+    }[d.isTop];
+    }}
+    <span class="layui-badge febs-tag-{{status.color}}">{{ status.title }}</span>
+</script>
+<script type="text/html" id="message-option">
+    <span shiro:lacksPermission="message:update,message:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="message:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="message:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+<a lay-event="readview" shiro:hasPermission="messageRead:list" title="已读"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-message'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('messageTable');
+                if (name === 'add') {
+                    febs.modal.open('新增消息', 'gen/message/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#message-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#message-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的消息');
+                    } else {
+                        febs.modal.confirm('删除消息', '确定删除该消息？', function () {
+                            var messageIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                messageIds.push(item.id)
+                            });
+                            deleteUsers(messageIds.join(','));
+                        });
+                    }
+                }
+            
+            },
+            options: [{
+                name: 'add',
+                title: '新增消息',
+                perms: 'message:add'
+            }, {
+                name: 'delete',
+                title: '删除消息',
+                perms: 'message:delete'
+            }]
+        });
+
+        table.on('tool(messageTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除消息', '确定删除该消息？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改消息', 'gen/message/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#message-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+            if (layEvent === 'readview') {
+                febs.modal.open('已读人员', 'gen/messageRead/'+data.id, {
+                	area: $(window).width() <= 750 ? '95%' : '1000px',
+                    data: data
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'messageTable',
+                url: ctx + 'message/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'blocName', title: '集团名称', minWidth: 100},
+                    {field: 'title', title: '标题', minWidth: 100},
+                    {field: 'content', title: '内容', minWidth: 100},
+                    {field: 'issueTime', title: '生成时间'},
+                    {field: 'publishTime', title: '发布时间'},  
+                    {title: '是否置顶',templet: '#message-status'},                  
+                    {title: '操作', toolbar: '#message-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+           
+            return {             
+            	title: $searchForm.find('input[name="title"]').val(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(messageIds) {
+            febs.get(ctx + 'message/delete/' + messageIds, null, function () {
+                febs.alert.success('删除消息成功');
+                $query.click();
+            });
+        }
+    })
+</script>

@@ -1,0 +1,208 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-withhold" lay-title="支付流水">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="mer-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                                                                     
+                                      <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">开始时间</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="msgTime" id="msgTime" class="layui-input">
+                                        </div>
+                                    </div>
+                                 <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">结束时间</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="lastTime" id="lastTime" class="layui-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="withhold:export">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="withholdTable" lay-data="{id: 'withholdTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/html" id="withhold-option">
+    <span shiro:lacksPermission="withhold:update,withhold:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="detail" shiro:hasPermission="mer:view"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>
+    <a lay-event="edit" shiro:hasPermission="mer:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="mer:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-withhold'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('withholdTable');
+                if (name === 'add') {
+                    febs.modal.open('新增商户', 'withhold/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#withhold-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#withhold-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要禁用的商户');
+                    } else {
+                        febs.modal.confirm('禁用商户', '确定禁用该商户？', function () {
+                            var merIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                merIds.push(item.id)
+                            });
+                            deleteUsers(merIds.join(','));
+                        });
+                    }
+                }
+            
+                if (name === 'export') {
+                  /*   var params = $.extend(getQueryParams(), {field: sortObject.field, order: sortObject.type});
+                    params.pageSize = $view.find(".layui-laypage-limits option:selected").val();
+                    params.pageNum = $view.find(".layui-laypage-em").next().html();  */
+                    febs.download(ctx + 'withhold/excel','', '市场绑卡统计表.xlsx');
+                  
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增商户',
+                perms: 'withhold:add'
+            }, {
+                name: 'delete',
+                title: '禁用商户',
+                perms: 'withhold:delete'
+            },{
+                name: 'export',
+                title: '导出Excel',
+                perms: 'withhold:export'
+            }]
+        });
+
+        treeSelect.render({
+            elem: $view.find('#dept'),
+            type: 'get',
+            data: ctx + 'dept/select/tree',
+            placeholder: '请选择',
+            search: false
+        });
+
+        table.on('tool(withholdTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('禁用商户', '确定禁用该商户？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改商户', 'gen/mer/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#withhold-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+
+        /*  table.on('sort(withholdTable)', function (obj) {
+            sortObject = obj;
+            tableIns.reload({
+                initSort: obj,
+                where: $.extend(getQueryParams(), {
+                    field: obj.field,
+                    order: obj.type
+                })
+            });
+        }); */
+
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        }); 
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'withholdTable',
+                url: ctx + 'withhold/list2',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'date', title: '日期', minWidth: 100},
+                    {field: 'price1', title: '收商户租金', minWidth: 100}, 
+                    {title: '付上游租金', field: 'price2'},
+                    {field: 'price3', title: '余额'}, 
+                    {field: 'memo', title: '备注'}
+                ]]
+            });
+        }
+
+        function getQueryParams() {           
+            return {
+/*                 name: $searchForm.find('input[name="name"]').val().trim(),
+ */                deptId: $searchForm.find("input[name='dept']").val().trim(),
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(merIds) {
+           febs.get(ctx + 'withhold/delete/' + merIds, null, function () {
+                febs.alert.success('禁用商户成功');
+                $query.click();
+            });
+        }
+    })
+</script>

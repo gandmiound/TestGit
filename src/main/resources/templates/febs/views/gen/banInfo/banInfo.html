@@ -1,0 +1,182 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-banInfo" lay-title="广告活动管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                    <form class="layui-form layui-table-form" lay-filter="banInfo-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">名称</label>
+                                        <div class="layui-input-inline">
+                                           <select name="banId" id="banId"  lay-verify="required" >
+	      								   </select>
+                                        </div>
+                                    </div>                                                                 
+                                </div>
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="banInfo:add,banInfo:delete">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="banInfoTable" lay-data="{id: 'banInfoTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="banInfo-option">
+    <span shiro:lacksPermission="banInfo:update,banInfo:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="edit" shiro:hasPermission="banInfo:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="banInfo:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'formSelects'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            formSelects = layui.formSelects,
+            dropdown = layui.dropdown,
+            $view = $('#febs-banInfo'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+        form.render();
+
+        initTable();
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('banInfoTable');
+                if (name === 'add') {
+                	var banId =$("#banId").val();
+                    febs.modal.open('新增广告活动', 'gen/banInfo/add/'+banId, {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#banInfo-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#banInfo-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要删除的广告活动');
+                    } else {
+                        febs.modal.confirm('删除广告活动', '确定删除该广告活动？', function () {
+                            var banInfoIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                banInfoIds.push(item.id)
+                            });
+                            deleteUsers(banInfoIds.join(','));
+                        });
+                    }
+                }
+            
+            },
+            options: [{
+                name: 'add',
+                title: '新增广告活动',
+                perms: 'banInfo:add'
+            }, {
+                name: 'delete',
+                title: '删除广告活动',
+                perms: 'banInfo:delete'
+            }]
+        });
+
+        table.on('tool(banInfoTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('删除广告活动', '确定删除该广告活动？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改广告活动', 'gen/banInfo/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#banInfo-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'banInfoTable',
+                url: ctx + 'banInfo/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'width', title: '名称', minWidth: 100},
+                    {field: 'url', title: '序号'},                      
+                    {title: '操作', toolbar: '#banInfo-option', minWidth: 140}
+                ]]
+            });
+            $.ajax({
+				type : "get",
+				url : ctx + 'ban/list',
+				dataType : "json",
+				success : function(d) {
+					 var tmp = '';
+					 for ( var i in d) {
+						 tmp += '<option value="' + d[i].id +  '">' + d[i].name + '</option>';
+					}
+					 $("#banId").html(tmp);					
+					 form.render(); 
+					 formSelects.render();
+				},
+				error:function(){
+					layer.alert('请求失败，稍后再试', {icon: 5});
+				}
+ 
+			});
+        }
+
+        function getQueryParams() {           
+            return {             
+            	banId: $("#banId").val(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+        function deleteUsers(banInfoIds) {
+            febs.get(ctx + 'banInfo/delete/' + banInfoIds, null, function () {
+                febs.alert.success('删除广告活动成功');
+                $query.click();
+            });
+        }
+    })
+</script>

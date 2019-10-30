@@ -1,0 +1,380 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-transInfo" lay-title="账单管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                
+                  <button class="layui-btn  layui-btn-sm layui-btn-primary" id="template-download"
+                            shiro:hasPermission="transInfo:template">
+                        <i class="layui-icon">&#xe82a;</i> 模板下载
+                    </button>
+                    <button class="layui-btn  layui-btn-sm layui-btn-primary" id="export"
+                            shiro:hasPermission="transInfo:export">
+                        <i class="layui-icon">&#xe7a8;</i> 导出Excel
+                    </button>
+                    <button class="layui-btn  layui-btn-sm layui-btn-success" id="import"
+                            shiro:hasPermission="transInfo:import">
+                        <i class="layui-icon">&#xe7aa;</i> 导入Excel
+                    </button>
+                    <form class="layui-form layui-table-form" lay-filter="transInfo-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                            
+                            
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">市场名</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="marketName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                    
+                                     <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">商户名</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="userName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                    	<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">账单时间</label>
+										<div class="layui-input-inline">
+											<input type="text" name="billTime" id="billTime"
+												class="layui-input">
+										</div>
+									</div>
+									<div class="layui-inline">
+										<label class="layui-form-label layui-form-label-sm">缴费时间</label>
+										<div class="layui-input-inline">
+											<input type="text" name="payTime" id="payTime"
+												class="layui-input">
+										</div>
+									</div>
+                                                    
+                                                                 
+                                </div>
+                               
+                                                
+                             
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="transInfo:add,transInfo:leave,transInfo:adopt,transInfo:refuse">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="transInfoTable" lay-data="{id: 'transInfoTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="transInfo-stat">
+    {{#
+    var stat = {
+    6: {title: '已退款'},
+    5: {title: '已拒绝'},
+  	4: {title: '待审核'},
+    3: {title: '待缴费'},
+  	2: {title: '缴费中'},
+    1: {title: '成功'},
+    0: {title: '失败'}
+    }[d.stat];
+    }}
+    <span>{{ stat.title }}</span>
+</script>
+
+<script type="text/html" id="transInfo-option">
+    <span shiro:lacksPermission="transInfo:detail,transInfo:update,transInfo:receivables">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a title="查看明细" lay-event="detail" shiro:hasPermission="transInfo:detail"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>&nbsp;&nbsp;   
+    <a title="编辑" lay-event="edit" shiro:hasPermission="transInfo:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>&nbsp;&nbsp;
+ 	
+   
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect', 'upload'], function () {
+        var $ = layui.jquery,         
+            febs = layui.febs,
+            laydate = layui.laydate,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            upload = layui.upload,
+            $view = $('#febs-transInfo'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+        
+    	laydate.render({
+			elem : '#billTime',
+			range : true,
+			trigger : 'click'
+		});
+		laydate.render({
+			elem : '#payTime',
+			range : true,
+			trigger : 'click'
+		});
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('transInfoTable');
+                if (name === 'add') {
+                    febs.modal.open('新增账单', 'gen/transInfo/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#transInfo-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#transInfo-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                
+                if (name === 'leave') {
+               	 if (!checkStatus.data.length) {
+                        febs.alert.warn('无法退款');
+                    } else {
+                        febs.modal.confirm('退款', '确定退款？', function () {
+                            var bannerIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                bannerIds.push(item.id)
+                            });
+                            deleteUsers(bannerIds.join(','));
+                        });
+                    }
+               }
+                
+                if (name === 'adopt') {
+                  	 if (!checkStatus.data.length) {
+                           febs.alert.warn('无法审核');
+                       } else {
+                           febs.modal.confirm('审核通过', '确定审核？', function () {
+                               var bannerIds = [];
+                               layui.each(checkStatus.data, function (key, item) {
+                                   bannerIds.push(item.id)
+                               });
+                               adoptUsers(bannerIds.join(','));
+                           });
+                       }
+                  }
+                
+                if (name === 'refuse') {
+                 	 if (!checkStatus.data.length) {
+                          febs.alert.warn('无法审核');
+                      } else {
+                          febs.modal.confirm('审核拒绝', '确定审核？', function () {
+                              var bannerIds = [];
+                              layui.each(checkStatus.data, function (key, item) {
+                                  bannerIds.push(item.id)
+                              });
+                              refuseUsers(bannerIds.join(','));
+                          });
+                      }
+                 }
+            },
+            options: [{
+                name: 'add',
+                title: '新增账单',
+                perms: 'transInfo:add'
+            },{
+                name: 'leave',
+                title: '退款',
+                perms: 'transInfo:leave'
+            },{
+                name: 'adopt',
+                title: '审核通过',
+                perms: 'transInfo:adopt'
+            },{
+                name: 'refuse',
+                title: '审核拒绝',
+                perms: 'transInfo:refuse'
+            }]
+        });
+
+        table.on('tool(transInfoTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'detail') {
+                febs.modal.view('账单信息', 'gen/transInfo/detail/' + data.id, {
+                    area: $(window).width() <= 750 ? '95%' : '660px'
+                });
+            }
+
+            if (layEvent === 'edit') {
+                febs.modal.open('修改账单', 'gen/transInfo/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#transInfo-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+            
+            if (layEvent === 'receivables') {
+                febs.modal.open('收款', 'gen/transInfo/receivables/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#transInfo-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+
+          
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        function getQueryParams() {
+			var begindate, 
+			enddate, 
+			billTime = $searchForm.find('input[name="billTime"]').val(), 
+			msgTime, 
+			lastTime, 
+			payTime = $searchForm.find('input[name="payTime"]').val();
+		if (billTime) {
+			begindate = billTime.split(' - ')[0];
+			enddate = billTime.split(' - ')[1];
+					}
+
+		if (payTime) {
+			msgTime = payTime.split(' - ')[0];
+			lastTime = payTime.split(' - ')[1];
+					}
+		return {
+			begindate: begindate,
+			enddate: enddate,
+			msgTime: msgTime,
+			lastTime: lastTime,
+    		marketName: $searchForm.find('input[name="marketName"]').val().trim(),  
+    		userName: $searchForm.find('input[name="userName"]').val().trim(),  
+			invalidate_ie_cache : new Date()
+			};
+            
+        }
+        function deleteUsers(bannerIds) {
+            febs.get(ctx + 'transInfo/leave/' + bannerIds, null, function () {
+                febs.alert.success('退款成功');
+                $query.click();
+            });
+        }
+        
+        function adoptUsers(bannerIds) {
+            febs.get(ctx + 'transInfo/adopt/' + bannerIds, null, function () {
+                febs.alert.success('审核成功');
+                $query.click();
+            });
+        }
+        
+        function refuseUsers(bannerIds) {
+            febs.get(ctx + 'transInfo/refuse/' + bannerIds, null, function () {
+                febs.alert.success('拒绝成功');
+                $query.click();
+            });
+        }
+        
+        
+        
+        
+        
+        upload.render({
+            elem: '#import',
+            url: ctx + 'transInfo/import',
+            accept: 'file',
+            exts: 'xlsx', // 只能上传 .xlsx格式
+            size: 5 * 1024, // kb
+            before: function () {
+                febs.view.loadBar.start();
+            },
+            done: function (res) {
+                febs.view.loadBar.finish();
+                if (res.code === 200) {
+                    // 刷新 table
+                    tableIns.reload({page: {curr: 1}});
+                    var data = res.data;
+                    // 弹出导入结果
+                    febs.modal.open('导入结果',ctx + 'gen/transInfo/transInfoResult', {
+                        area: $(window).width() <= 750 ? '95%' : '1000px',
+                        data: data
+                    });
+                }
+            }, error: function (res) {
+                //请求异常回调
+                console.error(res);
+                febs.view.loadBar.error();
+                febs.alert.error('导入失败！');
+            }
+        }); 
+
+        $view.on('click', '#template-download', function () {
+            febs.download(ctx + 'transInfo/template', null, '账单导入模板.xlsx');
+        });
+
+         $view.on('click', '#export', function () {
+            var params = {};
+            params.pageSize = $view.find(".layui-laypage-limits option:selected").val();
+            params.pageNum = $view.find(".layui-laypage-em").next().html();
+            febs.download(ctx + 'transInfo/excel', getQueryParams, 'Excel导出结果.xlsx');
+        });
+        
+        
+
+        
+         function initTable() {
+             tableIns = febs.table.init({
+                 elem: $view.find('table'),
+                 id: 'transInfoTable',
+                 url: ctx + 'transInfo/list',
+                 cols: [[
+                 	{type: 'checkbox'},
+                     {field: 'marketName', title: '市场名称'},
+                     {field: 'userName', title: '商户名称', minWidth: 100},
+                     {field: 'contractno', title: '合同编号', minWidth: 100},  
+                     {field: 'transType', title: '账单类型', minWidth: 100},   
+                     {field: 'begindate', title: '账单开始日期', minWidth: 140},   
+                     {field: 'enddate', title: '账单结束日期', minWidth: 140},   
+                     {field: 'price', title: '账单金额', minWidth: 140},   
+                     {field: 'receivedAmt', title: '已收金额'},   
+                     {field: 'msgTime', title: '缴费开始时间', minWidth: 100},  
+                     {field: 'lastTime', title: '缴费结束时间', minWidth: 100},  
+                     {templet:'#transInfo-stat', title: '状态'},  
+                     {field: 'memo', title: '备注'},                                    
+                     {title: '操作', toolbar: '#transInfo-option', minWidth: 140}
+                 ]]
+             });
+         }
+        
+    })
+</script>

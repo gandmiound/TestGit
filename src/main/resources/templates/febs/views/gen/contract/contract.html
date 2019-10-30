@@ -1,0 +1,229 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-contract" lay-title="合同管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-body febs-table-full">
+                 <div class="layui-row">
+                 <button class="layui-btn  layui-btn-sm layui-btn-primary" id="template-download"
+                            shiro:hasPermission="contract:template">
+                        <i class="layui-icon">&#xe82a;</i> 模板下载
+                    </button>                  
+                    <button class="layui-btn  layui-btn-sm layui-btn-success" id="import"
+                            shiro:hasPermission="contract:import">
+                        <i class="layui-icon">&#xe7aa;</i> 导入Excel
+                    </button>
+                </div>
+                    <form class="layui-form layui-table-form" lay-filter="contract-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">市场名</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="marketName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>                                
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">商户名</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="merName" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>                                                          
+                                </div>                                
+                            </div>
+                            <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="contract:add">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <table lay-filter="contractTable" lay-data="{id: 'contractTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="contract-status">
+    {{#
+    var status = {
+    1: {title: '生效中', color: 'green'},
+    0: {title: '已失效', color: 'volcano'}
+    }[d.isvalid];
+    }}
+    <span class="layui-badge febs-tag-{{status.color}}">{{ status.title }}</span>
+</script>
+
+<script type="text/html" id="contract-option">
+    <span shiro:lacksPermission="contract:detail,contract:update">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a title="查看明细" lay-event="detail" shiro:hasPermission="contract:detail"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>&nbsp;&nbsp;   
+    <a title="编辑" lay-event="edit" shiro:hasPermission="contract:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>&nbsp;&nbsp;
+{{# if(d.isvalid==1){}}
+    <a title="离场" lay-event="leave" shiro:hasPermission="contract:leave"><i
+            class="layui-icon layui-icon-rollback febs-red">&nbsp;</i></a>
+{{#}}}
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery',  'form', 'table', 'febs', 'treeSelect', 'upload'], function () {
+        var $ = layui.jquery,         
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            upload = layui.upload,
+            $view = $('#febs-contract'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+        form.render();
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('contractTable');
+                if (name === 'add') {
+                    febs.modal.open('新增合同', 'gen/contract/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#contract-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#contract-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+            },
+            options: [{
+                name: 'add',
+                title: '新增合同',
+                perms: 'contract:add'
+            }]
+        });
+
+        table.on('tool(contractTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'detail') {
+                febs.modal.view('合同信息', 'gen/contract/detail/' + data.id, {
+                    area: $(window).width() <= 750 ? '95%' : '660px'
+                });
+            }
+
+            if (layEvent === 'edit') {
+                febs.modal.open('修改合同', 'gen/contract/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#contract-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+
+            if (layEvent === 'leave') {
+                febs.modal.open('离场', 'gen/contract/leave/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#contract-leave').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+      
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+        upload.render({
+          elem: '#import',
+          url: ctx + 'contract/import',
+          accept: 'file',
+          exts: 'xlsx', // 只能上传 .xlsx格式
+          size: 5 * 1024, // kb
+          before: function () {
+              febs.view.loadBar.start();
+          },
+          done: function (res) {
+              febs.view.loadBar.finish();
+              if (res.code === 200) {
+                  // 刷新 table
+                  tableIns.reload({page: {curr: 1}});
+                  var data = res.data;
+                  // 弹出导入结果
+                  febs.modal.open('导入结果','gen/contract/contractResult', {
+                      area: $(window).width() <= 750 ? '95%' : '1000px',
+                      data: data
+                  });
+              }
+          }, error: function (res) {
+              //请求异常回调
+              console.error(res);
+              febs.view.loadBar.error();
+              febs.alert.error('导入失败！');
+          }
+      }); 
+
+        $view.on('click', '#template-download', function () {
+            febs.download(ctx + 'contract/template', null, '商户合同导入模板.xlsx');
+        });
+
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'contractTable',
+                url: ctx + 'contract/list',
+                cols: [[
+                    {field: 'marketName', title: '市场名称'},
+                    {field: 'merName', title: '商户名称', minWidth: 100},
+                    {title: '合同编号', field: 'contractno', minWidth: 100},
+                    {field: 'bussiitem', title: '经营项目', minWidth: 100},  
+                    {field: 'serrialno', title: '合同期限（年）', minWidth: 100},   
+                    {field: 'begindate', title: '合同开始日期', minWidth: 140},   
+                    {field: 'enddate', title: '合同结束日期', minWidth: 140},   
+                    {field: 'price', title: '月租'},   
+                    {field: 'type', title: '缴费时长(月)', minWidth: 100},   
+                    {title: '是否生效', templet: '#contract-status'},                               
+                    {title: '操作', toolbar: '#contract-option', minWidth: 140}
+                ]]
+            });
+        }
+
+        function getQueryParams() {
+           
+            return {             
+            	marketName: $searchForm.find('input[name="marketName"]').val().trim(),  
+            	merName: $searchForm.find('input[name="merName"]').val().trim(),              
+                invalidate_ie_cache: new Date()
+            };
+        }
+
+       
+    })
+</script>

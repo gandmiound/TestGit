@@ -1,0 +1,132 @@
+<style>
+    #banner-update {
+        padding: 20px 25px 25px 0;
+    }
+
+    #banner-update .layui-treeSelect .ztree li a, .ztree li span {
+        margin: 0 0 2px 3px !important;
+    }
+</style>
+<div class="layui-fluid" id="banner-update">
+    <form class="layui-form" action="" lay-filter="banner-update-form">
+        <div class="layui-form-item febs-hide">
+            <label class="layui-form-label febs-form-item-require">版本：</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" data-th-value="${banner.id}">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label febs-form-item-require">标题：</label>
+            <div class="layui-input-block">
+                <input type="text" name="name"  lay-verify="name" autocomplete="off" class="layui-input" >
+            </div>
+        </div>
+           <div class="layui-form-item">
+            <label class="layui-form-label">上架时间：</label>
+            <div class="layui-input-block">
+                <input type="text" name="memo" id="memo" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+           <div class="layui-form-item">
+            <label class="layui-form-label">是否上架：</label>
+            <div class="layui-input-block">
+            <select  name="isValid" id="isValid"  class="layui-input">
+            <option value="1"> 上架</option>
+            <option value="0"> 下架</option>
+            </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">调转地址：</label>
+            <div class="layui-input-block">
+                <input type="text" name="url" lay-verify="url" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">有效日期：</label>
+            <div class="layui-input-block">
+                <input type="text" name="effectiveDate" id="effectiveDate" autocomplete="off" class="layui-input">
+            </div>
+        </div>        
+        <div class="layui-form-item">
+            <label class="layui-form-label">序号：</label>
+            <div class="layui-input-block">
+                <input type="number" name="priority" id="priority" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">图片类型：</label>
+            <div class="layui-input-block">
+                <select class="layui-input" id="pictureType" 
+						name="pictureType">
+						<option value="1">banner</option>
+						<option value="2">引导页</option>
+						<option value="3">热门活动</option>
+						<option value="4">公告</option>
+					</select>
+            </div>
+        </div>
+        
+        <div class="layui-form-item febs-hide">
+            <button class="layui-btn" lay-submit="" lay-filter="banner-update-form-submit" id="submit"></button>
+        </div>
+    </form>
+</div>
+
+<script data-th-inline="javascript">
+    layui.use(['febs', 'laydate','form', 'formSelects', 'validate'], function () {
+        var $ = layui.$,
+            febs = layui.febs,
+            layer = layui.layer,
+            formSelects = layui.formSelects,
+            form = layui.form,
+            laydate = layui.laydate,
+            banner = [[${banner}]],
+            $view = $('#banner-update'),
+            validate = layui.validate;
+
+        form.verify(validate);
+        form.render();
+
+        initUserValue();
+
+        formSelects.render();
+        laydate.render({
+            elem: '#effectiveDate',
+            range: false,
+            type:'datetime', // 可选择：年、月、日、时、分、秒
+            format: 'yyyy-MM-dd HH:mm:ss', //指定时间格式
+            trigger: 'click'
+        });
+        laydate.render({
+            elem: '#memo',
+            range: false,
+            type:'datetime', // 可选择：年、月、日、时、分、秒
+            format: 'yyyy-MM-dd HH:mm:ss', //指定时间格式
+            trigger: 'click'
+        });
+        function initUserValue() {
+            form.val("banner-update-form", {
+                "name": banner.name,
+                "memo": banner.memo,
+                "url": banner.url,
+                "effectiveDate": banner.effectiveDate,
+                "priority": banner.priority,
+                "isValid": banner.isValid,
+                "pictureType": banner.pictureType
+            });
+        }
+        form.on('submit(banner-update-form-submit)', function (data) {
+            if (febs.nativeEqual(data.field, banner)) {
+                febs.alert.warn('数据未作任何修改！');
+                return false;
+            }
+            febs.post(ctx + 'banner/update', data.field, function () {
+                layer.closeAll();
+                febs.alert.success('修改成功');
+                $('#febs-banner').find('#query').click();
+            });
+            return false;
+        });
+    });
+</script>

@@ -1,0 +1,254 @@
+<div class="layui-fluid layui-anim febs-anim" id="febs-merMarket" lay-title="订金管理">
+    <div class="layui-row febs-container">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                  
+                <div class="layui-card-body febs-table-full">
+                  
+                    <form class="layui-form layui-table-form" lay-filter="merMarket-table-form">
+                        <div class="layui-row">
+                            <div class="layui-col-md10">
+                                <div class="layui-form-item">
+                               
+                                
+                                  <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">商户名</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="merMarketname" autocomplete="off" class="layui-input">
+                                        </div>
+                                    </div>
+                                    <div class="layui-inline">
+                                        <label class="layui-form-label layui-form-label-sm">市场</label>
+                                        <div class="layui-input-inline">
+                                            <input type="text" name="dept" id="dept" lay-filter="dept"
+                                                   class="layui-input">
+                                        </div>
+                                    </div> 
+                                
+                                </div>
+                            </div>
+                          <div class="layui-col-md2 layui-col-sm12 layui-col-xs12 table-action-area">
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="query">
+                                    <i class="layui-icon">&#xe848;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action" id="reset">
+                                    <i class="layui-icon">&#xe79b;</i>
+                                </div>
+                                <div class="layui-btn layui-btn-sm layui-btn-primary table-action action-more"
+                                     shiro:hasAnyPermissions="merMarket:add,merMarket:delete,merMarket:export">
+                                    <i class="layui-icon">&#xe875;</i>
+                                </div>
+                            </div> 
+                        </div>
+                    </form>
+                    <table lay-filter="merMarketTable" lay-data="{id: 'merMarketTable'}"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="merMarket-stat">
+    {{#
+    var stat = {
+    1: {title: '正常'},
+    0: {title: '禁用'}
+    }[d.stat];
+    }}
+    <span>{{ stat.title }}</span>
+</script>
+<script type="text/html" id="merMarket-option">
+    <span shiro:lacksPermission="merMarket:update,merMarket:delete">
+        <span class="layui-badge-dot febs-bg-orange"></span> 无权限
+    </span>
+    <a lay-event="detail" shiro:hasPermission="merMarket:view"><i
+            class="layui-icon febs-edit-area febs-green">&#xe7a5;</i></a>
+    <a lay-event="edit" shiro:hasPermission="merMarket:update"><i
+            class="layui-icon febs-edit-area febs-blue">&#xe7a4;</i></a>
+    <a lay-event="del" shiro:hasPermission="merMarket:delete"><i class="layui-icon febs-edit-area febs-red">&#xe7f9;</i></a>
+</script>
+<script data-th-inline="none" type="text/javascript">
+    layui.use(['dropdown', 'jquery', 'laydate', 'form', 'table', 'febs', 'treeSelect', 'upload'], function () {
+        var $ = layui.jquery,
+            laydate = layui.laydate,
+            febs = layui.febs,
+            form = layui.form,
+            table = layui.table,
+            upload = layui.upload,
+            treeSelect = layui.treeSelect,
+            dropdown = layui.dropdown,
+            $view = $('#febs-merMarket'),
+            $query = $view.find('#query'),
+            $reset = $view.find('#reset'),
+            $searchForm = $view.find('form'),
+            tableIns;
+
+         form.render(); 
+
+        initTable();
+
+       
+
+        dropdown.render({
+            elem: $view.find('.action-more'),
+            click: function (name, elem, event) {
+                var checkStatus = table.checkStatus('merMarketTable');
+                if (name === 'add') {
+                    febs.modal.open('新增商户', 'gen/merMarket/add', {
+                        btn: ['提交', '重置'],
+                        area: $(window).width() <= 750 ? '95%' : '50%',
+                        yes: function (index, layero) {
+                            $('#merMarket-add').find('#submit').trigger('click');
+                        },
+                        btn2: function () {
+                            $('#merMarket-add').find('#reset').trigger('click');
+                            return false;
+                        }
+                    });
+                }
+                if (name === 'delete') {
+                    if (!checkStatus.data.length) {
+                        febs.alert.warn('请选择需要禁用的商户');
+                    } else {
+                        febs.modal.confirm('禁用商户', '确定禁用该商户？', function () {
+                            var merMarketIds = [];
+                            layui.each(checkStatus.data, function (key, item) {
+                                merMarketIds.push(item.id)
+                            });
+                            deleteUsers(merMarketIds.join(','));
+                        });
+                    }
+                }
+            
+                 if (name === 'export') {
+                  
+                    febs.download(ctx + 'merMarket/excel', getQueryParams(), '商户信息表.xlsx');
+                } 
+            },
+            options: [{
+                name: 'add',
+                title: '新增商户',
+                perms: 'merMarket:add'
+            }, {
+                name: 'delete',
+                title: '禁用商户',
+                perms: 'merMarket:delete'
+            },{
+                name: 'export',
+                title: '导出Excel',
+                perms: 'merMarket:export'
+            }]
+        });
+
+        treeSelect.render({
+            elem: $view.find('#dept'),
+            type: 'get',
+            data: ctx + 'dept/select/tree',
+            placeholder: '请选择',
+            search: false
+        });
+
+        table.on('tool(merMarketTable)', function (obj) {
+            var data = obj.data,
+                layEvent = obj.event;           
+            if (layEvent === 'del') {
+                febs.modal.confirm('禁用商户', '确定禁用该商户？', function () {
+                    deleteUsers(data.id);
+                });
+            }
+            if (layEvent === 'edit') {
+                febs.modal.open('修改商户', 'gen/merMarket/update/' + data.id, {
+                    area: $(window).width() <= 750 ? '90%' : '50%',
+                    btn: ['提交', '取消'],
+                    yes: function (index, layero) {
+                        $('#merMarket-update').find('#submit').trigger('click');
+                    },
+                    btn2: function () {
+                        layer.closeAll();
+                    }
+                });
+            }
+        });
+
+   
+        $query.on('click', function () {
+            tableIns.reload({where: getQueryParams(), page: {curr: 1}});
+        });
+
+
+         function getQueryParams() {           
+            return {
+                merMarketname: $searchForm.find('input[name="merMarketname"]').val(),
+                deptId: $searchForm.find("input[name='dept']").val(),
+                invalidate_ie_cache: new Date()
+            };
+        } 
+
+        function deleteUsers(merMarketIds) {
+           febs.get(ctx + 'merMarket/delete/' + merMarketIds, null, function () {
+                febs.alert.success('禁用商户成功');
+                $query.click();
+            });
+        } 
+        
+        
+          upload.render({
+            elem: '#import',
+            url: ctx + 'import',
+            accept: 'file',
+            exts: 'xlsx', // 只能上传 .xlsx格式
+            size: 5 * 1024, // kb
+            before: function () {
+                febs.view.loadBar.start();
+            },
+            done: function (res) {
+                febs.view.loadBar.finish();
+                if (res.code === 200) {
+                    // 刷新 table
+                    tableIns.reload({page: {curr: 1}});
+                    var data = res.data;
+                    // 弹出导入结果
+                    febs.modal.open('导入结果',ctx + 'merMarket/merMarketResult', {
+                        area: $(window).width() <= 750 ? '95%' : '1000px',
+                        data: data
+                    });
+                }
+            }, error: function (res) {
+                //请求异常回调
+                console.error(res);
+                febs.view.loadBar.error();
+                febs.alert.error('导入失败！');
+            }
+        }); 
+
+        $view.on('click', '#template-download', function () {
+            febs.download(ctx + 'template', null, '商户导入模板.xlsx');
+        });
+
+         $view.on('click', '#export', function () {
+            var params = {};
+            params.pageSize = $view.find(".layui-laypage-limits option:selected").val();
+            params.pageNum = $view.find(".layui-laypage-em").next().html();
+            febs.download(ctx + 'merMarket/excel', getQueryParams, 'Excel导出结果.xlsx');
+        });
+        function initTable() {
+            tableIns = febs.table.init({
+                elem: $view.find('table'),
+                id: 'merMarketTable',
+                url: ctx + 'merMarket/list',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'blocName', title: '公司名称', minWidth: 100},
+                    {field: 'marketName', title: '市场名称', minWidth: 100},
+                    {field: 'merName', title: '商户名称', minWidth: 100},
+                    {field: 'phone', title: '手机号', minWidth: 100},
+                    {title: '订金', field: 'prepayment'},
+                    {title: '状态', templet: '#merMarket-stat',},   
+                    {field: 'memo', title: '备注'}, 
+                    {title: '操作', toolbar: '#merMarket-option', minWidth: 140}
+                ]]
+            });
+        }
+        
+    })
+</script>
